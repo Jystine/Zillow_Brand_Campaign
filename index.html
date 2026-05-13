@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Where Will You Get Drafted? | Zillow x NFL Draft</title>
+<style>
+  :root {
+    --zillow-blue: #006AFF;
+    --zillow-navy: #0A2540;
+    --zillow-yellow: #FFD24D;
+    --bg-light: #E8F0FC;
+    --white: #FFFFFF;
+    --shadow-card: 0 8px 24px rgba(10, 37, 64, 0.12);
+    --shadow-card-hover: 0 16px 40px rgba(10, 37, 64, 0.22);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--zillow-navy);
+    overflow: hidden;
+    background: #050B1A;
+  }
+
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 400ms ease;
+    overflow: hidden;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .logo {
+    position: absolute;
+    bottom: 22px;
+    left: 24px;
+    width: 38px;
+    height: 38px;
+    z-index: 10;
+    opacity: 0.95;
+  }
+  .logo svg { width: 100%; height: 100%; display: block; }
+
+  /* ================ INTRO ================ */
+  #screen-intro {
+    background:
+      radial-gradient(ellipse at center 70%, rgba(255, 210, 77, 0.18) 0%, transparent 55%),
+      linear-gradient(180deg, #050B1A 0%, #0A2540 55%, #050B1A 100%);
+    color: var(--white);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  #screen-intro::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 78px,
+      rgba(255, 255, 255, 0.035) 78px,
+      rgba(255, 255, 255, 0.035) 80px
+    );
+    pointer-events: none;
+  }
+  #screen-intro::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 140px;
+    background: linear-gradient(180deg, transparent 0%, rgba(255, 210, 77, 0.06) 60%, rgba(255, 210, 77, 0.12) 100%);
+    pointer-events: none;
+  }
+
+  .draft-badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: var(--zillow-yellow);
+    color: var(--zillow-navy);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 100px;
+    margin-bottom: 28px;
+    z-index: 2;
+  }
+  .draft-badge::before { content: "🏈"; font-size: 14px; }
+
+  .intro-headline {
+    position: relative;
+    font-size: clamp(40px, 8vw, 92px);
+    font-weight: 900;
+    line-height: 0.95;
+    margin-bottom: 22px;
+    letter-spacing: -0.025em;
+    z-index: 2;
+  }
+  .intro-headline .accent { color: var(--zillow-yellow); }
+
+  .intro-subhead {
+    position: relative;
+    font-size: clamp(15px, 1.8vw, 19px);
+    max-width: 520px;
+    margin-bottom: 44px;
+    opacity: 0.82;
+    line-height: 1.5;
+    z-index: 2;
+  }
+
+  .ticket-btn {
+    position: relative;
+    background: var(--zillow-yellow);
+    color: var(--zillow-navy);
+    border: none;
+    padding: 20px 56px;
+    font-size: 16px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    cursor: pointer;
+    border-radius: 10px;
+    box-shadow: 0 7px 0 #C99A1A, 0 14px 32px rgba(255, 210, 77, 0.28);
+    transition: transform 150ms, box-shadow 150ms;
+    z-index: 2;
+    font-family: inherit;
+  }
+  .ticket-btn::before, .ticket-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    background: #050B1A;
+    border-radius: 50%;
+    transform: translateY(-50%);
+  }
+  .ticket-btn::before { left: -9px; }
+  .ticket-btn::after { right: -9px; }
+  .ticket-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 9px 0 #C99A1A, 0 16px 40px rgba(255, 210, 77, 0.38);
+  }
+  .ticket-btn:active {
+    transform: translateY(5px);
+    box-shadow: 0 2px 0 #C99A1A, 0 4px 12px rgba(255, 210, 77, 0.3);
+  }
+
+  /* ================ QUIZ ================ */
+  #screen-quiz {
+    background: var(--bg-light);
+    padding: 32px 24px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .quiz-inner {
+    width: 100%;
+    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .back-wrap {
+    width: 100%;
+    min-height: 32px;
+    margin-bottom: 12px;
+  }
+  .back-btn {
+    background: none;
+    border: none;
+    color: var(--zillow-navy);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    opacity: 0.55;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: opacity 200ms, background 200ms;
+    font-family: inherit;
+  }
+  .back-btn:hover {
+    opacity: 1;
+    background: rgba(10, 37, 64, 0.08);
+  }
+  .back-btn.hidden { visibility: hidden; }
+
+  .progress-wrap {
+    width: 100%;
+    margin-bottom: 48px;
+  }
+  .progress-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--zillow-navy);
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.55;
+    text-align: center;
+  }
+  .yardline {
+    display: flex;
+    gap: 4px;
+    height: 10px;
+  }
+  .yardline-seg {
+    flex: 1;
+    background: rgba(10, 37, 64, 0.12);
+    border-radius: 2px;
+    transition: background 350ms ease;
+  }
+  .yardline-seg.filled { background: var(--zillow-yellow); }
+
+  /* Slide animation container */
+  .slide-clip {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+  .slide-content {
+    width: 100%;
+    will-change: transform, opacity;
+  }
+  @keyframes slideOutLeft {
+    from { transform: translateX(0); opacity: 1; }
+    to   { transform: translateX(-110%); opacity: 0; }
+  }
+  @keyframes slideInRight {
+    from { transform: translateX(110%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to   { transform: translateX(110%); opacity: 0; }
+  }
+  @keyframes slideInLeft {
+    from { transform: translateX(-110%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+  .slide-content.out-left  { animation: slideOutLeft  320ms cubic-bezier(0.5, 0, 0.75, 0) forwards; }
+  .slide-content.in-right  { animation: slideInRight  380ms cubic-bezier(0.2, 0.6, 0.2, 1) forwards; }
+  .slide-content.out-right { animation: slideOutRight 320ms cubic-bezier(0.5, 0, 0.75, 0) forwards; }
+  .slide-content.in-left   { animation: slideInLeft   380ms cubic-bezier(0.2, 0.6, 0.2, 1) forwards; }
+
+  .question-text {
+    font-size: clamp(26px, 4.2vw, 40px);
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 36px;
+    line-height: 1.2;
+    color: var(--zillow-navy);
+  }
+
+  .answers-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    width: 100%;
+  }
+  .answer-card {
+    background: var(--white);
+    border: 2px solid transparent;
+    border-radius: 14px;
+    padding: 22px 22px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--zillow-navy);
+    text-align: left;
+    cursor: pointer;
+    box-shadow: var(--shadow-card);
+    transition: transform 150ms, box-shadow 150ms, border-color 150ms;
+    min-height: 92px;
+    display: flex;
+    align-items: center;
+    line-height: 1.35;
+    font-family: inherit;
+  }
+  .answer-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--zillow-blue);
+  }
+  .answer-card:active { transform: translateY(-1px); }
+
+  @media (max-width: 600px) {
+    .answers-grid { grid-template-columns: 1fr; }
+    .question-text { margin-bottom: 28px; }
+    .progress-wrap { margin-bottom: 36px; }
+  }
+
+  /* ================ RESULT ================ */
+  #screen-result {
+    color: var(--white);
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    position: fixed;
+  }
+  #screen-result::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.42) 55%, rgba(0,0,0,0.78) 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .skyline {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 220px;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .result-content {
+    position: relative;
+    z-index: 3;
+    max-width: 760px;
+    width: 100%;
+    animation: fadeUp 700ms ease-out;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .drafted-label {
+    font-size: clamp(12px, 1.5vw, 16px);
+    font-weight: 800;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    color: var(--zillow-yellow);
+    opacity: 0;
+    animation: fadeStep 500ms 350ms ease-out forwards;
+  }
+  .city-name {
+    font-size: clamp(60px, 13vw, 160px);
+    font-weight: 900;
+    line-height: 0.92;
+    letter-spacing: -0.035em;
+    margin-bottom: 6px;
+    text-shadow: 0 6px 36px rgba(0,0,0,0.45);
+  }
+  .city-state {
+    font-size: clamp(18px, 2.2vw, 26px);
+    font-weight: 400;
+    opacity: 0.85;
+    margin-bottom: 26px;
+    letter-spacing: 0.04em;
+  }
+  .team-callout {
+    font-size: clamp(17px, 1.9vw, 21px);
+    font-weight: 700;
+    margin-bottom: 18px;
+    opacity: 0;
+    animation: fadeStep 500ms 750ms ease-out forwards;
+  }
+  .city-blurb {
+    font-size: clamp(14px, 1.5vw, 17px);
+    line-height: 1.6;
+    max-width: 540px;
+    margin: 0 auto 44px;
+    opacity: 0;
+    animation: fadeStep 500ms 1100ms ease-out forwards;
+  }
+  @keyframes fadeStep { to { opacity: 0.95; } }
+
+  .tunnel-cta {
+    display: inline-block;
+    position: relative;
+    padding: 20px 50px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.04) 100%);
+    color: var(--white);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: 2px solid rgba(255,255,255,0.55);
+    border-radius: 200px 200px 14px 14px;
+    box-shadow:
+      0 0 0 4px rgba(255,255,255,0.06),
+      0 12px 44px rgba(0,0,0,0.32),
+      inset 0 -3px 18px rgba(255, 210, 77, 0.3);
+    opacity: 0;
+    animation: fadeStep 500ms 1500ms ease-out forwards, tunnelGlow 2800ms 1900ms ease-in-out infinite;
+    font-family: inherit;
+    user-select: none;
+  }
+  @keyframes tunnelGlow {
+    0%, 100% {
+      box-shadow:
+        0 0 0 4px rgba(255,255,255,0.06),
+        0 12px 44px rgba(0,0,0,0.32),
+        inset 0 -3px 18px rgba(255, 210, 77, 0.3);
+    }
+    50% {
+      box-shadow:
+        0 0 0 6px rgba(255, 210, 77, 0.18),
+        0 12px 56px rgba(255, 210, 77, 0.28),
+        inset 0 -3px 26px rgba(255, 210, 77, 0.55);
+    }
+  }
+  .tunnel-cta .arrow {
+    display: inline-block;
+    margin-left: 12px;
+  }
+  .tunnel-cta .tunnel-sub {
+    display: block;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1.8px;
+    opacity: 0.7;
+    margin-top: 3px;
+    text-transform: uppercase;
+  }
+
+  .retake {
+    display: block;
+    margin: 24px auto 0;
+    background: none;
+    border: none;
+    color: var(--white);
+    opacity: 0.55;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    font-family: inherit;
+    transition: opacity 200ms;
+  }
+  .retake:hover { opacity: 1; }
+
+  .source-tag {
+    position: absolute;
+    bottom: 18px;
+    right: 24px;
+    font-size: 10px;
+    opacity: 0.5;
+    z-index: 3;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+
+  @media (max-width: 600px) {
+    .tunnel-cta { padding: 18px 38px; font-size: 13px; }
+    .skyline { height: 140px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ====== INTRO ====== -->
+<div id="screen-intro" class="screen active">
+  <div class="draft-badge">NFL Draft · Powered by Zillow</div>
+  <h1 class="intro-headline">Where will<br>you get <span class="accent">drafted</span>?</h1>
+  <p class="intro-subhead">Five questions. One city. Find out which top US move-to market is calling your name.</p>
+  <button class="ticket-btn" onclick="startQuiz()">Enter the Draft</button>
+  <div class="logo" aria-label="Zillow">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#FFFFFF" d="M50 8 L8 44 L20 44 L20 90 L80 90 L80 44 L92 44 Z"/>
+      <path fill="#050B1A" d="M36 54 L64 54 L64 60 L44 78 L64 78 L64 84 L36 84 L36 78 L56 60 L36 60 Z"/>
+    </svg>
+  </div>
+</div>
+
+<!-- ====== QUIZ ====== -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-inner">
+    <div class="back-wrap">
+      <button class="back-btn hidden" id="back-btn" onclick="goBack()">← Back</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label" id="progress-label">Question 1 of 5</div>
+      <div class="yardline" id="yardline">
+        <div class="yardline-seg"></div>
+        <div class="yardline-seg"></div>
+        <div class="yardline-seg"></div>
+        <div class="yardline-seg"></div>
+        <div class="yardline-seg"></div>
+      </div>
+    </div>
+    <div class="slide-clip">
+      <div class="slide-content" id="slide-content">
+        <h2 class="question-text" id="question-text"></h2>
+        <div class="answers-grid" id="answers-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== RESULT ====== -->
+<div id="screen-result" class="screen">
+  <svg class="skyline" id="skyline-svg" viewBox="0 0 1200 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="result-content">
+    <div class="drafted-label">You have been drafted to</div>
+    <h1 class="city-name" id="city-name"></h1>
+    <div class="city-state" id="city-state"></div>
+    <div class="team-callout" id="team-callout"></div>
+    <p class="city-blurb" id="city-blurb"></p>
+    <div class="tunnel-cta" aria-hidden="true">
+      Walk into the tunnel<span class="arrow">→</span>
+      <span class="tunnel-sub">Explore on Zillow Immerse</span>
+    </div>
+    <button class="retake" onclick="restart()">Take the quiz again</button>
+  </div>
+  <div class="source-tag">Zillow Immerse · NFL Draft</div>
+  <div class="logo" aria-label="Zillow">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#FFFFFF" d="M50 8 L8 44 L20 44 L20 90 L80 90 L80 44 L92 44 Z"/>
+      <path fill="rgba(0,0,0,0.6)" d="M36 54 L64 54 L64 60 L44 78 L64 78 L64 84 L36 84 L36 78 L56 60 L36 60 Z"/>
+    </svg>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    q: "What's the next big move in your life?",
+    answers: [
+      { label: "Graduating from college / finding next job", w: { austin: 3, charlotte: 2, nashville: 1, tampa: 0, phoenix: 0 } },
+      { label: "Getting engaged",          w: { austin: 1, charlotte: 2, nashville: 3, tampa: 1, phoenix: 0 } },
+      { label: "Starting a family",        w: { austin: 0, charlotte: 3, nashville: 2, tampa: 1, phoenix: 1 } },
+      { label: "Retiring",                 w: { austin: 0, charlotte: 0, nashville: 1, tampa: 3, phoenix: 3 } }
+    ]
+  },
+  {
+    q: "Your perfect Sunday looks like…",
+    answers: [
+      { label: "Gaming marathon and trying new tech", w: { austin: 3, charlotte: 2, nashville: 0, tampa: 0, phoenix: 1 } },
+      { label: "Live music and a packed restaurant",  w: { austin: 2, charlotte: 1, nashville: 3, tampa: 1, phoenix: 0 } },
+      { label: "Wine and a home reno project",        w: { austin: 0, charlotte: 1, nashville: 1, tampa: 2, phoenix: 3 } },
+      { label: "Golf and planning the next trip",     w: { austin: 0, charlotte: 1, nashville: 1, tampa: 3, phoenix: 3 } }
+    ]
+  },
+  {
+    q: "The neighborhood that fits you is…",
+    answers: [
+      { label: "Walkable, buzzing, full of nightlife",      w: { austin: 3, charlotte: 1, nashville: 3, tampa: 1, phoenix: 0 } },
+      { label: "Family-friendly suburb with great schools", w: { austin: 0, charlotte: 3, nashville: 2, tampa: 1, phoenix: 2 } },
+      { label: "Quiet and scenic with room to breathe",     w: { austin: 0, charlotte: 1, nashville: 0, tampa: 2, phoenix: 3 } },
+      { label: "Warm, palm trees, retiree-friendly",        w: { austin: 0, charlotte: 0, nashville: 0, tampa: 3, phoenix: 3 } }
+    ]
+  },
+  {
+    q: "Your NFL Sunday is…",
+    answers: [
+      { label: "Live at the stadium, face painted",        w: { austin: 1, charlotte: 3, nashville: 3, tampa: 3, phoenix: 2 } },
+      { label: "Sports bar with your whole crew",          w: { austin: 3, charlotte: 2, nashville: 2, tampa: 1, phoenix: 1 } },
+      { label: "Streaming at home with the full spread",   w: { austin: 1, charlotte: 2, nashville: 1, tampa: 2, phoenix: 3 } },
+      { label: "Refreshing the fantasy app every play",    w: { austin: 3, charlotte: 2, nashville: 1, tampa: 1, phoenix: 1 } }
+    ]
+  },
+  {
+    q: "Your housing priority is…",
+    answers: [
+      { label: "Low rent and flexibility to move",         w: { austin: 3, charlotte: 2, nashville: 2, tampa: 0, phoenix: 1 } },
+      { label: "First home for a growing family",          w: { austin: 1, charlotte: 3, nashville: 2, tampa: 1, phoenix: 2 } },
+      { label: "Upgrading for amenities and lifestyle",    w: { austin: 1, charlotte: 1, nashville: 3, tampa: 2, phoenix: 1 } },
+      { label: "Cash out and downsize somewhere warm",     w: { austin: 0, charlotte: 0, nashville: 0, tampa: 3, phoenix: 3 } }
+    ]
+  }
+];
+
+const CITIES = {
+  austin: {
+    name: "Austin", state: "Texas",
+    team: "Deep in Cowboys country 🏈",
+    blurb: "Where tech meets tacos. Live music, food trucks, and a skyline that's still growing — Austin doesn't slow down.",
+    sky: "#FF8A4C", mid: "#A24FD6", ground: "#1A0E3A"
+  },
+  charlotte: {
+    name: "Charlotte", state: "North Carolina",
+    team: "Home of the Carolina Panthers 🏈",
+    blurb: "A young city built for first chapters — new jobs, new homes, and Queens Park weekends.",
+    sky: "#5BA3FF", mid: "#0066CC", ground: "#0A2540"
+  },
+  nashville: {
+    name: "Nashville", state: "Tennessee",
+    team: "Home of the Tennessee Titans 🏈",
+    blurb: "Music City is for next-chapter dreamers. Engagement nights on Broadway, first homes in 12 South.",
+    sky: "#FF5594", mid: "#A82A6F", ground: "#3A1A2E"
+  },
+  tampa: {
+    name: "Tampa", state: "Florida",
+    team: "Home of the Tampa Bay Buccaneers 🏈",
+    blurb: "Sun, sand, and 70-degree winters. Tampa is where you cash in the equity and start enjoying it.",
+    sky: "#FFB347", mid: "#FF6B9D", ground: "#1A4D5C"
+  },
+  phoenix: {
+    name: "Phoenix", state: "Arizona",
+    team: "Home of the Arizona Cardinals 🏈",
+    blurb: "Wide desert skies, mountain hikes, and a slower pace. Phoenix rewards patience.",
+    sky: "#FF7A3D", mid: "#C73C25", ground: "#4A1409"
+  }
+};
+
+const SKYLINES = {
+  austin:    "M0 220 L0 140 L60 140 L60 95 L100 95 L100 65 L140 65 L140 105 L180 105 L180 80 L220 80 L220 50 L255 50 L255 115 L295 115 L295 75 L335 75 L335 40 L370 40 L370 95 L420 95 L420 75 L460 75 L460 115 L505 115 L505 85 L555 85 L555 105 L615 105 L615 65 L660 65 L660 105 L720 105 L720 85 L765 85 L765 125 L820 125 L820 90 L870 90 L870 70 L920 70 L920 110 L975 110 L975 90 L1025 90 L1025 125 L1080 125 L1080 100 L1140 100 L1140 135 L1200 135 L1200 220 Z",
+  charlotte: "M0 220 L0 155 L70 155 L70 110 L120 110 L120 75 L170 75 L170 45 L210 45 L210 100 L260 100 L260 65 L310 65 L310 30 L350 30 L350 85 L400 85 L400 55 L455 55 L455 115 L505 115 L505 80 L560 80 L560 100 L625 100 L625 60 L685 60 L685 105 L745 105 L745 85 L800 85 L800 120 L860 120 L860 95 L915 95 L915 70 L965 70 L965 110 L1020 110 L1020 90 L1080 90 L1080 130 L1140 130 L1140 150 L1200 150 L1200 220 Z",
+  nashville: "M0 220 L0 165 L80 165 L80 115 L130 115 L130 85 L180 85 L180 100 L220 100 L220 65 L260 65 L260 105 L310 105 L310 90 L360 90 L360 55 L400 55 L400 110 L450 110 L450 80 L500 80 L500 125 L560 125 L560 95 L620 95 L620 75 L680 75 L680 120 L740 120 L740 90 L800 90 L800 110 L860 110 L860 80 L920 80 L920 130 L980 130 L980 100 L1040 100 L1040 115 L1100 115 L1100 150 L1200 150 L1200 220 Z",
+  tampa:     "M0 220 L0 175 L80 175 L80 140 L150 140 L150 110 L210 110 L210 135 L280 135 L280 105 L340 105 L340 75 L400 75 L400 120 L465 120 L465 95 L525 95 L525 130 L595 130 L595 100 L655 100 L655 120 L725 120 L725 95 L795 95 L795 135 L855 135 L855 110 L925 110 L925 85 L985 85 L985 125 L1045 125 L1045 105 L1105 105 L1105 145 L1200 145 L1200 220 Z",
+  phoenix:   "M0 220 L0 180 L80 180 L80 160 L160 160 L160 135 L240 135 L240 115 L320 115 L320 95 L400 95 L400 125 L475 125 L475 110 L545 110 L545 90 L625 90 L625 120 L700 120 L700 100 L775 100 L775 130 L855 130 L855 110 L930 110 L930 140 L1010 140 L1010 120 L1080 120 L1080 150 L1150 150 L1150 170 L1200 170 L1200 220 Z"
+};
+
+let currentQ = 0;
+let scores = { austin: 0, charlotte: 0, nashville: 0, tampa: 0, phoenix: 0 };
+let history = [];
+let transitioning = false;
+
+const SLIDE_OUT_MS = 320;
+const SLIDE_IN_MS  = 380;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startQuiz() {
+  currentQ = 0;
+  scores = { austin: 0, charlotte: 0, nashville: 0, tampa: 0, phoenix: 0 };
+  history = [];
+  transitioning = false;
+  const slide = document.getElementById('slide-content');
+  slide.classList.remove('out-left', 'out-right', 'in-left', 'in-right');
+  renderQuestion();
+  showScreen('screen-quiz');
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[currentQ];
+  document.getElementById('progress-label').textContent = `Question ${currentQ + 1} of 5`;
+  document.querySelectorAll('.yardline-seg').forEach((seg, i) => {
+    seg.classList.toggle('filled', i <= currentQ);
+  });
+  document.getElementById('back-btn').classList.toggle('hidden', currentQ === 0);
+  document.getElementById('question-text').textContent = q.q;
+  const grid = document.getElementById('answers-grid');
+  grid.innerHTML = '';
+  q.answers.forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-card';
+    btn.textContent = a.label;
+    btn.onclick = () => selectAnswer(a);
+    grid.appendChild(btn);
+  });
+}
+
+// direction: 'forward' (next question, slides left) or 'back' (previous, slides right)
+function slideTo(direction) {
+  const slide = document.getElementById('slide-content');
+  const outClass = direction === 'forward' ? 'out-left' : 'out-right';
+  const inClass  = direction === 'forward' ? 'in-right' : 'in-left';
+
+  transitioning = true;
+  slide.classList.remove('out-left', 'out-right', 'in-left', 'in-right');
+  void slide.offsetWidth;
+  slide.classList.add(outClass);
+
+  setTimeout(() => {
+    renderQuestion();
+    slide.classList.remove(outClass);
+    void slide.offsetWidth;
+    slide.classList.add(inClass);
+    setTimeout(() => {
+      slide.classList.remove(inClass);
+      transitioning = false;
+    }, SLIDE_IN_MS);
+  }, SLIDE_OUT_MS);
+}
+
+function selectAnswer(answer) {
+  if (transitioning) return;
+  history.push(answer);
+  for (const city in answer.w) scores[city] += answer.w[city];
+  currentQ++;
+  if (currentQ < QUESTIONS.length) {
+    slideTo('forward');
+  } else {
+    showResult();
+  }
+}
+
+function goBack() {
+  if (transitioning) return;
+  if (currentQ === 0 || history.length === 0) return;
+  const prev = history.pop();
+  for (const city in prev.w) scores[city] -= prev.w[city];
+  currentQ--;
+  slideTo('back');
+}
+
+function showResult() {
+  const order = ['austin','charlotte','nashville','tampa','phoenix'];
+  let top = order[0];
+  for (const city of order) if (scores[city] > scores[top]) top = city;
+
+  const c = CITIES[top];
+  const result = document.getElementById('screen-result');
+  result.style.background = `linear-gradient(180deg, ${c.sky} 0%, ${c.mid} 55%, ${c.ground} 100%)`;
+
+  document.getElementById('skyline-svg').innerHTML =
+    `<path d="${SKYLINES[top]}" fill="${c.ground}" opacity="0.92"/>` +
+    `<path d="${SKYLINES[top]}" fill="rgba(0,0,0,0.35)" transform="translate(0,4)"/>`;
+
+  document.getElementById('city-name').textContent = c.name;
+  document.getElementById('city-state').textContent = c.state;
+  document.getElementById('team-callout').textContent = c.team;
+  document.getElementById('city-blurb').textContent = c.blurb;
+
+  const content = result.querySelector('.result-content');
+  content.style.animation = 'none';
+  void content.offsetWidth;
+  content.style.animation = '';
+
+  showScreen('screen-result');
+}
+
+function restart() {
+  startQuiz();
+}
+</script>
+</body>
+</html>
